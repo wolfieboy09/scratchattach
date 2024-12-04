@@ -181,3 +181,9 @@ class WebsocketServerError(Exception):
     """
 
     pass
+
+class CouldNotUpdateProfileIcon(Exception):
+    """
+    Raised when there was an error updating the user profile icon
+    """
+    pass
