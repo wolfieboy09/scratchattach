@@ -4,6 +4,8 @@ import json
 import random
 import string
 
+from requests_toolbelt import MultipartEncoder
+
 from ..eventhandlers import message_events
 from . import project
 from ..utils import exceptions
@@ -800,6 +802,38 @@ class User(BaseSiteComponent):
         To check if the user verified successfully, call the .check() function on the returned object.
         It will return True if the user commented the code.
         """
+
+    def set_icon(self, file_path: str) -> None:
+        """
+        Sets the profile picture of the user.
+
+        Keyword Arguments:
+            file_path (str): The path to the image
+
+        Raises:
+            exceptions.CouldNotUpdateProfileIcon
+
+        """
+        encoder = MultipartEncoder(
+            fields={
+                "file": (file_path.split("/")[-1], open(file_path, "rb"), f"image/{file_path.rsplit(".", 1)[-1].lower()}")
+            }
+        )
+
+        headerCopy = self._headers
+        headerCopy['Content-Length'] = str(encoder.len)
+        headerCopy['X-Requested-With'] = 'XMLHttpRequest'
+        headerCopy['IE'] = 'trailers'
+        headerCopy['Content-Type'] = encoder.content_type
+
+        try:
+            resp = requests.post(f"https://scratch.mit.edu/site-api/users/all/{self.username}/", data=encoder, headers=self._headers, cookies=self._cookies)
+        except Exception as e:
+            raise exceptions.CouldNotUpdateProfileIcon(f"Failed to update profile icon due to: {e}")
+
+        if resp.json().has_key("errors"):
+            raise exceptions.CouldNotUpdateProfileIcon(f"Failed to update profile icon due to: {''.join(resp.json()['errors'])}")
+
 
         class Verificator:
 
